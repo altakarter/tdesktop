@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "core/sandbox.h"
 
+#include "vless/vless_proxy.h"
 #include "base/platform/base_platform_info.h"
 #include "platform/platform_specific.h"
 #include "mainwidget.h"
@@ -474,6 +475,12 @@ void Sandbox::refreshGlobalProxy() {
 		|| proxy.type == MTP::ProxyData::Type::Http) {
 		QNetworkProxy::setApplicationProxy(
 			MTP::ToNetworkProxy(MTP::ToDirectIpProxy(proxy)));
+	} else if (VLESS::IsRunning()) {
+		// No user proxy configured — route through the built-in VLESS tunnel.
+		QNetworkProxy::setApplicationProxy(
+			QNetworkProxy(QNetworkProxy::Socks5Proxy,
+				QString::fromLatin1(VLESS::kProxyHost),
+				VLESS::kProxyPort));
 	} else if (!Core::IsAppLaunched()
 		|| Core::App().settings().proxy().isSystem()) {
 		QNetworkProxyFactory::setUseSystemConfiguration(true);

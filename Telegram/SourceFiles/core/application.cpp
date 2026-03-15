@@ -7,6 +7,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 */
 #include "core/application.h"
 
+#include "vless/vless_proxy.h"
 #include "data/data_abstract_structure.h"
 #include "data/data_channel.h"
 #include "data/data_forum.h"
@@ -266,6 +267,9 @@ void Application::run() {
 	style::internal::StartFonts();
 
 	ValidateScale();
+
+	// Start the built-in VLESS+Reality tunnel before proxy setup.
+	VLESS::Start();
 
 	refreshGlobalProxy(); // Depends on app settings being read.
 

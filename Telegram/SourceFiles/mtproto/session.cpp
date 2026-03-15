@@ -10,6 +10,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "mtproto/details/mtproto_dcenter.h"
 #include "mtproto/session_private.h"
 #include "mtproto/mtproto_auth_key.h"
+#include "vless/vless_proxy.h"
 #include "core/application.h"
 #include "core/core_settings.h"
 #include "base/unixtime.h"
@@ -240,7 +241,25 @@ void Session::refreshOptions() {
 	auto &settings = Core::App().settings().proxy();
 	const auto &proxy = settings.selected();
 	const auto isEnabled = settings.isEnabled();
-	const auto proxyType = (isEnabled ? proxy.type : ProxyData::Type::None);
+
+	// If no user proxy is configured but the VLESS tunnel is running,
+	// route MTProto through the local SOCKS5 proxy.
+	const auto useVless = !isEnabled && VLESS::IsRunning();
+	const auto effectiveProxy = [&]() -> ProxyData {
+		if (isEnabled) {
+			return proxy;
+		}
+		if (useVless) {
+			auto vless = ProxyData();
+			vless.type = ProxyData::Type::Socks5;
+			vless.host = QString::fromLatin1(VLESS::kProxyHost);
+			vless.port = VLESS::kProxyPort;
+			return vless;
+		}
+		return ProxyData();
+	}();
+
+	const auto proxyType = effectiveProxy.type;
 	const auto useTcp = (proxyType != ProxyData::Type::Http);
 	const auto useHttp = (proxyType != ProxyData::Type::Mtproto);
 	const auto useIPv4 = true;
@@ -249,7 +268,7 @@ void Session::refreshOptions() {
 		_instance->systemLangCode(),
 		_instance->cloudLangCode(),
 		_instance->langPackName(),
-		(isEnabled ? proxy : ProxyData()),
+		effectiveProxy,
 		useIPv4,
 		useIPv6,
 		useHttp,

@@ -542,6 +542,8 @@ PRIVATE
     core/utils.cpp
     core/utils.h
     core/version.h
+    vless/vless_proxy.cpp
+    vless/vless_proxy.h
     countries/countries_manager.cpp
     countries/countries_manager.h
     data/business/data_business_chatbots.cpp
